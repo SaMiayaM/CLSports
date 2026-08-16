@@ -1448,7 +1448,8 @@ function TrainingPage() {
               <Reveal delay={0.16} className="glass-deep rounded-xl p-6">
                 <h4 className="font-display font-bold text-sm uppercase text-white tracking-tight mb-3">Payments</h4>
                 <p className="font-body text-xs text-white/50 leading-relaxed mb-4">
-                  Start with a secure Square checkout component and connect it to a Vercel function that creates the actual charge server-side.
+                  Secure checkout: card data is tokenized by Square in the browser; the charge is created server-side via{" "}
+                  <code className="text-white/70">POST /api/payments/create</code> with server-validated totals.
                 </p>
                 {import.meta.env.VITE_SQUARE_APPLICATION_ID && import.meta.env.VITE_SQUARE_LOCATION_ID ? (
                   <SquareCheckout
@@ -1457,8 +1458,9 @@ function TrainingPage() {
                     amount="25.00"
                     currency="USD"
                     description="CL Sports Club session deposit"
-                    createPaymentEndpoint="/api/square/create-payment"
+                    createPaymentEndpoint="/api/payments/create"
                     buttonLabel="Pay Deposit"
+                    orderItems={[{ name: "Session Deposit", category: "Adult", size: "M", price: 25, quantity: 1 }]}
                   />
                 ) : (
                   <div className="rounded-lg border border-white/10 bg-black/20 p-4">

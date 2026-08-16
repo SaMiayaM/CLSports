@@ -1,0 +1,41 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "20"
+
+[functions]
+  directory = "netlify/functions"
+  # Use esbuild for TS functions
+  node_bundler = "esbuild"
+
+# ── API aliases: map clean /api/* routes to Netlify Functions ──
+[[redirects]]
+  from = "/api/payments/create"
+  to = "/.netlify/functions/create-payment"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/square/create-payment"
+  to = "/.netlify/functions/create-payment"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/webhooks/square"
+  to = "/.netlify/functions/square-webhook"
+  status = 200
+  force = true
+
+# SPA fallback — must be last
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+[dev]
+  command = "npm run dev"
+  port = 5173
+  targetPort = 5173

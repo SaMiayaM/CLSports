@@ -1,0 +1,25 @@
+# Example — do NOT commit real secrets here. Use GitHub Secrets.
+# GitHub repo → Settings → Secrets and variables → Actions → New repository secret
+# Then reference as ${{ secrets.NAME }}
+name: Deploy to Netlify
+on:
+  push:
+    branches: [main]
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run build
+        env:
+          VITE_SQUARE_APPLICATION_ID: ${{ secrets.VITE_SQUARE_APPLICATION_ID }}
+          VITE_SQUARE_LOCATION_ID: ${{ secrets.VITE_SQUARE_LOCATION_ID }}
+      - run: |
+          echo "Checking build for leaked secrets..."
+          ! grep -R "EAAA" dist/ || (echo "Secret leaked in build!" && exit 1)
+          echo "No secrets in dist/ — ok"

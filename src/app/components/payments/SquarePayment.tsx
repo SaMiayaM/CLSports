@@ -45,7 +45,7 @@ export function SquarePayment({ amount, orderItems, description = "Purchase", bu
       amount={typeof amount === "number" ? amount.toFixed(2) : amount}
       currency="USD"
       description={description}
-      createPaymentEndpoint="/api/square/create-payment"
+      createPaymentEndpoint="/api/payments/create"
       buttonLabel={buttonLabel ?? "Pay Now"}
       className={className}
       orderItems={orderItems}
