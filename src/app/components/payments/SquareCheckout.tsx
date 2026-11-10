@@ -242,7 +242,7 @@ export function SquareCheckout({
   const isSubmitting = uiState === "submitting";
 
   return (
-    <form className={className} onSubmit={handleSubmit} aria-live="polite">
+    <form className={`${className ?? ""} checkout-form min-w-0`} onSubmit={handleSubmit} aria-live="polite">
       <div className="space-y-4">
         <div>
           <div className="font-display text-[10px] tracking-[0.22em] text-orange-400 uppercase mb-2">Secure Checkout</div>
@@ -252,11 +252,11 @@ export function SquareCheckout({
           </div>
         </div>
 
-        <div id={containerId} className="min-h-[140px] rounded-xl border border-white/10 bg-black/20 p-3" />
+        <div id={containerId} className="min-h-[140px] w-full rounded-xl border border-white/10 bg-[#111111] p-3" />
 
         <div className="space-y-3">
           <div className="font-display text-[10px] tracking-[0.22em] text-orange-400 uppercase">Billing Information</div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             {([
               ["givenName", "First name", "John", "given-name"],
               ["familyName", "Last name", "Doe", "family-name"],
@@ -326,7 +326,7 @@ export function SquareCheckout({
             type="submit"
             disabled={!isReady || isSubmitting}
             aria-disabled={!isReady || isSubmitting}
-            className="w-full rounded-sm bg-red-600 px-4 py-3 font-display text-[11px] font-semibold uppercase tracking-[0.16em] text-white transition-opacity disabled:cursor-not-allowed disabled:opacity-50 hover:bg-red-500"
+            className="min-h-11 w-full rounded-sm bg-red-600 px-4 py-3 font-display text-[11px] font-semibold uppercase tracking-[0.16em] text-white transition-opacity disabled:cursor-not-allowed disabled:opacity-50 hover:bg-red-500"
           >
             {isSubmitting ? "Processing…" : buttonLabel}
           </button>

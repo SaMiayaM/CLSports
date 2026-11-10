@@ -28,7 +28,7 @@ export function CartDrawer({ open, onClose }: { open: boolean; onClose: () => vo
             animate={{ x: 0 }}
             exit={{ x: "100%" }}
             transition={{ type: "spring", stiffness: 360, damping: 32 }}
-            className="fixed top-0 right-0 z-60 w-full sm:w-96 h-full bg-[#0b0b0b] border-l border-white/[0.06] p-6 overflow-auto"
+            className="fixed top-0 right-0 z-60 w-full sm:w-96 h-full bg-[#0b0b0b] border-l border-white/[0.06] px-6 pt-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] overflow-auto overscroll-contain"
           >
             <div className="flex items-center justify-between mb-6">
               <h3 className="font-display font-bold text-lg text-white">Your Cart</h3>

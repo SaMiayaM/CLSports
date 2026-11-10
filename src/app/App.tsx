@@ -160,6 +160,18 @@ const GLOBAL_CSS = `
   .form-input:focus { outline: none; border-color: rgba(220,38,38,0.55); box-shadow: 0 0 0 3px rgba(220,38,38,0.12); }
   .form-input::placeholder { color: rgba(255,255,255,0.25); }
   .form-label { font-family: 'Oswald', sans-serif; font-weight: 500; letter-spacing: 0.09em; text-transform: uppercase; font-size: 11px; color: rgba(255,255,255,0.45); display: block; margin-bottom: 7px; }
+  .checkout-form .form-input {
+    background: #111111;
+    border-color: rgba(255,255,255,0.14);
+    color: #ffffff;
+    font-size: 16px;
+    min-height: 48px;
+    padding: 12px 14px;
+  }
+  .checkout-form .form-input:focus {
+    border-color: rgba(220,38,38,0.75);
+    box-shadow: 0 0 0 3px rgba(220,38,38,0.14);
+  }
 
   @keyframes introGlowPulse {
     0%,100% { opacity: 0.55; transform: scale(1); }
@@ -1527,7 +1539,7 @@ function ProductFlipCard({ product, index, viewMode }: {
           </div>
         </motion.div>
       </div>
-      <div className="pt-4 pb-1">
+      <div className="pt-4 pb-1 flex min-w-0 flex-col">
         <div className="flex items-center gap-2 mb-1">
           <span className="font-display text-[9px] tracking-[0.2em] text-orange-500 uppercase">CL Sports Club</span>
           <span className="w-1 h-1 rounded-full bg-white/20"/>
@@ -1537,24 +1549,27 @@ function ProductFlipCard({ product, index, viewMode }: {
           {product.type === "Tee" ? "Travel Tee" : "Travel Tank"}
         </div>
         <div className="font-body text-[11px] text-orange-400/80 mb-3">${priceNum}.00</div>
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex gap-2 items-center">
-            <select value={category} onChange={(e) => setCategory(e.target.value as any)} className="form-input bg-black/10 text-white/90 px-3 py-2">
+        <div className="mt-1 grid gap-3">
+          <div className="grid grid-cols-2 gap-2">
+            <select value={category} onChange={(e) => setCategory(e.target.value as any)} className="form-input min-h-11 min-w-0 bg-black/10 text-white/90 px-3 py-2">
               <option value="Adult">Adult</option>
               <option value="Kids">Kids</option>
             </select>
-            <select value={size} onChange={(e) => setSize(e.target.value)} className="form-input bg-black/10 text-white/90 px-3 py-2">
+            <select value={size} onChange={(e) => setSize(e.target.value)} className="form-input min-h-11 min-w-0 bg-black/10 text-white/90 px-3 py-2">
               {["S","M","L","XL"].map(sz => <option key={sz} value={sz}>{sz}</option>)}
             </select>
-            <div className="ml-2 flex items-center gap-1">
-              <button onClick={() => setQty(q => Math.max(1, q - 1))} className="w-8 h-8 rounded-sm bg-white/5 text-white">-</button>
-              <input type="number" value={qty} onChange={(e) => setQty(Math.max(1, Number(e.target.value) || 1))} className="w-12 text-center bg-transparent border border-white/6 rounded-sm px-2 py-1 text-white" />
-              <button onClick={() => setQty(q => q + 1)} className="w-8 h-8 rounded-sm bg-white/5 text-white">+</button>
+          </div>
+          <div className="flex min-h-11 items-center justify-between gap-2 rounded-sm border border-white/[0.08] bg-white/[0.03] px-2">
+            <span className="font-display text-[10px] tracking-[0.14em] text-white/40 uppercase">Quantity</span>
+            <div className="flex items-center gap-1">
+              <button type="button" aria-label="Decrease quantity" onClick={() => setQty(q => Math.max(1, q - 1))} className="h-11 w-11 rounded-sm bg-white/5 text-white">-</button>
+              <input aria-label="Quantity" type="number" min="1" value={qty} onChange={(e) => setQty(Math.max(1, Number(e.target.value) || 1))} className="h-11 w-12 text-center bg-transparent border border-white/10 rounded-sm px-2 py-1 text-white" />
+              <button type="button" aria-label="Increase quantity" onClick={() => setQty(q => q + 1)} className="h-11 w-11 rounded-sm bg-white/5 text-white">+</button>
             </div>
           </div>
           <motion.button whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}
             onClick={() => addItem({ productId: product.id?.toString?.() ?? product.name, name: product.name, category, size, price: priceNum, image: imgFront, quantity: qty })}
-            className="font-display text-[10px] font-bold tracking-widest uppercase px-4 py-2 bg-red-600 text-white rounded-sm cursor-pointer">
+            className="min-h-11 w-full font-display text-[10px] font-bold tracking-widest uppercase px-4 py-2 bg-red-600 text-white rounded-sm cursor-pointer">
             Add {qty} to Cart
           </motion.button>
         </div>
@@ -1594,8 +1609,8 @@ function ShopPage() {
       <div className="divider-red"/>
 
       <div className="bg-[#080808] sticky top-[64px] z-30 border-b border-white/[0.055]">
-        <div className="max-w-6xl mx-auto px-5 sm:px-8 py-3 flex items-center justify-between gap-4">
-          <div className="flex gap-2">
+        <div className="max-w-6xl mx-auto px-5 sm:px-8 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
+          <div className="flex flex-wrap gap-2">
             {tabs.map((t) => (
               <motion.button key={t.key} onClick={() => setActiveTab(t.key)} whileTap={{ scale: 0.97 }}
                 className={`relative font-display text-[12px] tracking-[0.14em] uppercase px-5 py-2.5 rounded-sm cursor-pointer transition-colors ${activeTab === t.key ? "text-white" : "text-white/45 hover:text-white/70"}`}>
@@ -1608,7 +1623,7 @@ function ShopPage() {
               </motion.button>
             ))}
           </div>
-          <div className="flex items-center glass rounded-sm overflow-hidden shrink-0">
+          <div className="flex items-center self-start glass rounded-sm overflow-hidden shrink-0">
             {(["studio", "court"] as const).map((mode) => (
               <motion.button key={mode} onClick={() => setViewMode(mode)} whileTap={{ scale: 0.97 }}
                 className={`relative font-display text-[11px] tracking-[0.12em] uppercase px-4 py-2 cursor-pointer transition-colors ${viewMode === mode ? "text-white" : "text-white/38 hover:text-white/60"}`}>
@@ -1627,7 +1642,7 @@ function ShopPage() {
         <AnimatePresence mode="wait">
           <motion.div key={activeTab} initial={{ opacity: 0 }} animate={{ opacity: 1 }}
             exit={{ opacity: 0 }} transition={{ duration: 0.25 }}
-            className="grid grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
+            className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-4 lg:gap-7">
             {filtered.map((p, i) => (
               <ProductFlipCard key={p.id} product={p} index={i} viewMode={viewMode}/>
             ))}
