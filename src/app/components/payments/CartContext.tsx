@@ -11,6 +11,10 @@ export type CartItem = {
   image?: string;
 };
 
+export function priceForCategory(category: CartItem["category"]): number {
+  return category === "Kids" ? 25 : 35;
+}
+
 type CartContextValue = {
   items: CartItem[];
   addItem: (item: Omit<CartItem, "id" | "quantity"> & { quantity?: number }) => void;
@@ -71,7 +75,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   }
 
   function total() {
-    return items.reduce((s, it) => s + it.price * it.quantity, 0);
+    return items.reduce((s, it) => s + priceForCategory(it.category) * it.quantity, 0);
   }
 
   return (

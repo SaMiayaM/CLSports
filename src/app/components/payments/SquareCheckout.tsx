@@ -16,6 +16,18 @@ type SquareCheckoutProps = {
   orderReference?: string;
 };
 
+export type BillingContact = {
+  givenName: string;
+  familyName: string;
+  email: string;
+  phone: string;
+  addressLines: string[];
+  city: string;
+  state: string;
+  countryCode: string;
+  postalCode: string;
+};
+
 type SquarePayments = NonNullable<Awaited<ReturnType<typeof Square.payments>>>;
 type SquareCard = Awaited<ReturnType<SquarePayments["card"]>>;
 
@@ -24,11 +36,17 @@ type UiState = "idle" | "submitting" | "success" | "declined" | "error";
 function mapToUserMessage(raw: string): string {
   // Never show raw Square API errors — map to safe, actionable messages
   const s = raw.toLowerCase();
+  if (s.includes("threeds") || s.includes("3ds") || s.includes("authentication") || s.includes("verification")) {
+    return "Your bank could not verify this payment. Check your billing details and try again.";
+  }
+  if (s.includes("network") || s.includes("fetch") || s.includes("timeout")) {
+    return "The secure payment check could not be completed. Check your connection and try again.";
+  }
   if (s.includes("declined") || s.includes("card_declined")) return "Your card was declined. Please try a different card.";
   if (s.includes("insufficient")) return "Insufficient funds. Please try a different card.";
   if (s.includes("cvv") || s.includes("invalid") || s.includes("card data")) return "Card details were invalid. Please check and try again.";
-  if (s.includes("verification") || s.includes("avs")) return "Card verification failed. Please try a different card.";
-  if (s.includes("timeout") || s.includes("temporarily") || s.includes("unavailable")) return "Payment service is temporarily unavailable. Please try again.";
+  if (s.includes("avs") || s.includes("cvv")) return "Your billing details could not be verified. Check them and try again.";
+  if (s.includes("temporarily") || s.includes("unavailable")) return "Payment service is temporarily unavailable. Please try again.";
   if (s.includes("token")) return "Secure payment tokenization failed. Please re-enter your card.";
   if (s.includes("not configured") || s.includes("applicationid") || s.includes("location")) return "Payment is not configured. Please contact support.";
   return "Payment failed. Please try again with a different card or contact support.";
@@ -54,6 +72,28 @@ export function SquareCheckout({
   const [uiState, setUiState] = useState<UiState>("idle");
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [billingContact, setBillingContact] = useState<BillingContact>({
+    givenName: "",
+    familyName: "",
+    email: "",
+    phone: "",
+    addressLines: [""],
+    city: "",
+    state: "",
+    countryCode: "US",
+    postalCode: "",
+  });
+
+  const serverCurrency = "USD";
+  const serverAmount = (orderItems ?? []).reduce((total, item) => {
+    const unitPriceCents = item.category === "Kids" ? 2500 : 3500;
+    return total + unitPriceCents * item.quantity;
+  }, 0) / 100;
+  const tokenizationAmount = serverAmount.toFixed(2);
+
+  function updateBilling(field: keyof Omit<BillingContact, "addressLines">, value: string) {
+    setBillingContact((current) => ({ ...current, [field]: value }));
+  }
 
   // ── Mount Web Payments SDK card (secure hosted iframe) ──
   useEffect(() => {
@@ -118,28 +158,39 @@ export function SquareCheckout({
 
     setUiState("submitting");
     setErrorMessage(null);
-    setStatusMessage("Securely tokenizing payment…");
+    setStatusMessage("Securely verifying your billing details…");
 
     try {
-      // Tokenize: SDK returns { status, token?, errors? } — do not log token
+      const requiredBillingFields: Array<keyof Omit<BillingContact, "addressLines">> = [
+        "givenName", "familyName", "email", "phone", "city", "state", "postalCode", "countryCode",
+      ];
+      if (
+        requiredBillingFields.some((field) => !billingContact[field].trim()) ||
+        !billingContact.addressLines[0].trim()
+      ) {
+        throw new Error("Please complete your billing information before continuing.");
+      }
+
       const verificationDetails = {
-        amount,
-        currencyCode: currency,
+        amount: tokenizationAmount,
+        currencyCode: serverCurrency,
         intent: "CHARGE" as const,
+        billingContact,
         customerInitiated: true,
         sellerKeyedIn: false,
       };
 
-      const result: any = await cardRef.current.tokenize(verificationDetails);
+      const result = await cardRef.current.tokenize(verificationDetails);
 
-      // SDK v2: tokenize() resolves with { status: "OK", token } or { status: "FAILED", errors }
-      if (result?.status && result.status !== "OK") {
-        const detail = result.errors?.[0]?.message || result.errors?.[0]?.detail || "Tokenization failed";
-        throw new Error(detail);
+      if (result.status !== "OK") {
+        const detail = "errors" in result
+          ? result.errors?.map((error) => error.message).join(" ")
+          : "Secure payment verification was not completed.";
+        throw new Error(detail || "Secure payment verification was not completed.");
       }
-      const sourceId = result?.token as string | undefined;
+      const sourceId = result.token;
       if (!sourceId) {
-        throw new Error(result?.errors?.[0]?.message || "Square did not return a payment token.");
+        throw new Error("Square did not return a payment token.");
       }
 
       setStatusMessage("Processing payment…");
@@ -151,8 +202,8 @@ export function SquareCheckout({
         body: JSON.stringify({
           sourceId,
           // amount is sent for display/debug only — server ignores it and recomputes from orderItems
-          amount,
-          currency,
+          amount: tokenizationAmount,
+          currency: serverCurrency,
           orderItems,
           orderReference,
         }),
@@ -197,11 +248,52 @@ export function SquareCheckout({
           <div className="font-display text-[10px] tracking-[0.22em] text-orange-400 uppercase mb-2">Secure Checkout</div>
           <div className="font-display font-bold text-lg text-white uppercase tracking-tight">{description}</div>
           <div className="font-body text-xs text-white/45 mt-1">
-            {amount} {currency} • Secured by Square
+            {tokenizationAmount} {serverCurrency} • Secured by Square
           </div>
         </div>
 
         <div id={containerId} className="min-h-[140px] rounded-xl border border-white/10 bg-black/20 p-3" />
+
+        <div className="space-y-3">
+          <div className="font-display text-[10px] tracking-[0.22em] text-orange-400 uppercase">Billing Information</div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {([
+              ["givenName", "First name", "John", "given-name"],
+              ["familyName", "Last name", "Doe", "family-name"],
+              ["email", "Email", "you@example.com", "email"],
+              ["phone", "Phone", "(908) 555-0142", "tel"],
+              ["city", "City", "Rahway", "address-level2"],
+              ["state", "State", "NJ", "address-level1"],
+              ["postalCode", "ZIP code", "07065", "postal-code"],
+              ["countryCode", "Country", "US", "country"],
+            ] as const).map(([field, label, placeholder, autocomplete]) => (
+              <label key={field} className="space-y-1">
+                <span className="font-display text-[10px] tracking-[0.14em] text-white/45 uppercase">{label}</span>
+                <input
+                  type={field === "email" ? "email" : field === "phone" ? "tel" : "text"}
+                  value={billingContact[field]}
+                  onChange={(event) => updateBilling(field, event.target.value)}
+                  placeholder={placeholder}
+                  autoComplete={autocomplete}
+                  required
+                  className="form-input"
+                />
+              </label>
+            ))}
+            <label className="space-y-1 sm:col-span-2">
+              <span className="font-display text-[10px] tracking-[0.14em] text-white/45 uppercase">Street address</span>
+              <input
+                type="text"
+                value={billingContact.addressLines[0]}
+                onChange={(event) => setBillingContact((current) => ({ ...current, addressLines: [event.target.value] }))}
+                placeholder="123 Main Street"
+                autoComplete="address-line1"
+                required
+                className="form-input"
+              />
+            </label>
+          </div>
+        </div>
 
         {/* Status / error region — never show raw Square payload */}
         {statusMessage && (
